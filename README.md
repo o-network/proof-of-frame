@@ -64,6 +64,69 @@ A proof of work ledger follows the same rules as a conventional distributed toke
 
 We can have a mix of trust depending on the level of trust required for each ledger
 
+## Example
+
+Say we have a `Party` class and a `Ledger` class, the party can accept either a private or public key, 
+if the party has a private key it will have a writable ledger, if it is public, they will only be able to 
+read frames from the ledger for verifications. 
+
+The `Party` class will have one function, `exchange` which will be available for public parties. 
+
+The `exchange` method accepts a `Frame` which has the type of `trust-exchange` or `trust-acceptance`
+
+### Client
+
+```js
+
+const privateParty = new Party(process.env.PRIVATE_KEY, process.env.PUBLIC_KEY);
+const privateLedger = new Ledger(privateParty, "https://example.com/ledgers/private");
+
+const trustedParty = new Party(process.env.TRUSTED_PUBLIC_KEY);
+
+const nonce = await privateLedger.nonce();
+const newFrame = {
+	type: "trust-exchange",
+	nonce,
+	// This also creates a new hash entry in the ledger, ensuring this newFrame will contain a record of this
+	// hash being geniune 
+	hash: await privateLedger.hash(nonce),
+	targetIdentifier: trustedParty.identifier,
+	timestamp: Date.now()
+};
+
+// Appended frame will contain a signature 
+// If the ledger didn't yet contain the public key, it will be appended as a "public-key-acceptance" frame before signing with the 
+// private key
+const appendedFrame = await privateLedger.append(newFrame);
+const responseFrame = await trustedParty.exchange(appendedFrame);
+// Will overwrite the signature and previous hash with the private ledger details, but hash & other details will be the same
+await privateLedger.append(responseFrame);
+```
+
+### Trusted Party
+
+```js
+const privateParty = new Party(process.env.PRIVATE_KEY, process.env.PUBLIC_KEY);
+const publicLedger = new Ledger(privateParty, "https://example.com/ledgers/public");
+
+privateParty.on("frame", async (sourceIdentifier, frame) => {
+	if (frame.type !== "trust-exchange") {
+		throw new RangeError("Invalid type received 'trust-exchange'");s
+	}
+	// Do some verification of the signature etc here
+	// Once verified we can append a new frame
+	const newFrame = {
+		type: "trust-acceptance",
+		hash: await privateLedger.hash(nonce),
+	    sourceHash: frame.hash,
+	    sourceIdentifier: sourceIdentifier,
+	    nonce: frame.nonce,
+	    timestamp: Date.now()
+	};
+	return publicLedger.append(newFrame);
+});
+```
+
 ## Contributing
 
 Please see [Contributing](./CONTRIBUTING.md)
