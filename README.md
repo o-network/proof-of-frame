@@ -10,6 +10,15 @@ To allow for frame verification to be indpendent of physical time we need to fir
 
 We can produce this trust exchange process in a way where the dependent ledger can define the level of trust they require before utilisng the exchanged trust information. 
 
+## The Solution
+
+This can be solved by creating a ledger and routinely submitting the most recent hash to a public proof of frame or proof of work chain. 
+
+Auditors can then use the publicly submitted hashes to verify the ledger has not been tampered with.
+
+Anyone with the ledger source can prove that a frame of information is from a trusted chain of events and has followed best
+practices along the way. 
+
 ##  Ledger
 
 In this document a ledger is a set of events where previous events cannot be tampered with without changing the current
